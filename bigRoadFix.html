@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>百家樂下三路分析工具（改進版）</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Microsoft JhengHei", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #1a2a6c, #2a4d69);
+      color: #f0f8ff;
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      padding: 30px 0;
+      background: rgba(0, 20, 40, 0.7);
+      border-radius: 15px;
+      margin-bottom: 25px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #ff8c00, #ffd700, #ff8c00);
+    }
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      color: #ffd700;
+    }
+    .subtitle {
+      font-size: 1.2rem;
+      color: #a9d1ff;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .input-section {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+    .input-section label {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+      color: #ffd700;
+    }
+    .example {
+      font-size: 0.9rem;
+      color: #a9d1ff;
+      margin-top: 8px;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 15px;
+      font-size: 1.1rem;
+      border: 2px solid #2a4d69;
+      border-radius: 10px;
+      background: rgba(0, 15, 30, 0.7);
+      color: #f0f8ff;
+      margin-bottom: 20px;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #ff8c00;
+      box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.3);
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: linear-gradient(to right, #ff8c00, #ff6b6b);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4);
+    }
+    button:hover {
+      background: linear-gradient(to right, #ff6b6b, #ff8c00);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(255, 140, 0, 0.6);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .output-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+    @media (max-width: 768px) {
+      .output-section {
+        grid-template-columns: 1fr;
+      }
+    }
+    .road-container {
+      background: rgba(0, 20, 40, 0.7);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+    .road-title {
+      color: #ffd700;
+      font-size: 1.4rem;
+      margin-bottom: 15px;
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #2a4d69;
+    }
+    .road-content {
+      background: rgba(0, 15, 30, 0.9);
+      border-radius: 8px;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      line-height: 1.8;
+      min-height: 120px;
+      overflow-x: auto;
+    }
+    .analysis-section {
+      background: rgba(0, 20, 40, 0.7);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 30px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+    .analysis-title {
+      color: #ffd700;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .analysis-item {
+      background: rgba(0, 15, 30, 0.8);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 4px solid #ff8c00;
+    }
+    .analysis-item h3 {
+      color: #ffd700;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+    }
+    .analysis-item p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+    }
+    .dragon-detected {
+      background: rgba(200, 0, 0, 0.3);
+      border-left-color: #ff0000;
+    }
+    .suggestion {
+      background: rgba(0, 100, 0, 0.3);
+      border-left: 4px solid #32cd32;
+      font-weight: bold;
+      font-size: 1.3rem;
+      padding: 25px;
+      text-align: center;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #a9d1ff;
+      font-size: 0.9rem;
+      border-top: 1px solid #2a4d69;
+      margin-top: 30px;
+    }
+    .symbol-explanation {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    .symbol-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .symbol {
+      font-size: 1.5rem;
+    }
+    .red { color: #ff6b6b; }
+    .blue { color: #4dabf7; }
+    .gold { color: #ffd700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>百家樂下三路分析工具</h1>
+      <p class="subtitle">大路、大眼仔、小路、蟑螂路 + 長龍偵測 + 前排規律分析</p>
+    </header>
+    <section class="input-section">
+      <label for="input">輸入大路序列 (B=莊贏, P=閒贏, T=和局)：</label>
+      <textarea id="input" placeholder="例如：PBPBPBBPTPPBBPBPPB..."></textarea>
+      <p class="example">範例輸入：PBPBPBBPTBPBPPBBPBPBPBPBPPBPBBPPBPB</p>
+      <button id="analyze">開始分析</button>
+    </section>
+    <section class="output-section">
+      <div class="road-container">
+        <h2 class="road-title">大路</h2>
+        <pre class="road-content" id="bigRoad"></pre>
+      </div>
+      <div class="road-container">
+        <h2 class="road-title">大眼仔</h2>
+        <pre class="road-content" id="bigEyeBoy"></pre>
+      </div>
+      <div class="road-container">
+        <h2 class="road-title">小路</h2>
+        <pre class="road-content" id="smallRoad"></pre>
+      </div>
+      <div class="road-container">
+        <h2 class="road-title">蟑螂路</h2>
+        <pre class="road-content" id="cockroach"></pre>
+      </div>
+    </section>
+    <section class="analysis-section">
+      <h2 class="analysis-title">分析結果</h2>
+      <div class="analysis-item" id="dragon">
+        <h3>長龍偵測</h3>
+        <p>等待分析結果...</p>
+      </div>
+      <div class="analysis-item" id="frontRule">
+        <h3>前排規律分析</h3>
+        <p>等待分析結果...</p>
+      </div>
+      <div class="analysis-item" id="threeRoads">
+        <h3>下三路分析</h3>
+        <p>等待分析結果...</p>
+      </div>
+      <div class="analysis-item suggestion" id="suggestion">
+        <p>綜合建議：等待分析結果...</p>
+      </div>
+    </section>
+    <div class="symbol-explanation">
+      <div class="symbol-item">
+        <span class="symbol">🔴</span> <span>紅圈 (大眼仔/小路/蟑螂路)</span>
+      </div>
+      <div class="symbol-item">
+        <span class="symbol">🔵</span> <span>藍圈 (大眼仔/小路/蟑螂路)</span>
+      </div>
+      <div class="symbol-item">
+        <span class="symbol">B</span> <span>莊贏</span>
+      </div>
+      <div class="symbol-item">
+        <span class="symbol">P</span> <span>閒贏</span>
+      </div>
+    </div>
+    <footer>
+      <p>百家樂分析工具 &copy; 2023 - 僅供娛樂參考，請理性遊戲</p>
+    </footer>
+  </div>
+  <script>
+    (() => {
+      "use strict";
+      // 設定常數
+      const ROWS = 6;
+      const DRAGON_LEN = 4;
+      const RED = "🔴", BLUE = "🔵";
+      /**
+       * 產生大路 (改進版)
+       *
+       * 傳入的序列會忽略和局，按照標準百家樂大路規則，
+       * 連續同邊會往下放，若到底或下方已被佔用則往右移動。
+       * @param {string[]} seq 序列字元陣列
+       * @returns {Array<Array<string|undefined>>} 大路格子陣列
+       */
+      function buildBigRoad(seq) {
+        const grid = [];
+        let prev = null;
+        let col = 0;
+        let row = 0;
+        for (const ch of seq) {
+          if (ch === 'T') continue;
+          if (prev === null) {
+            col = 0;
+            row = 0;
+          } else if (ch !== prev) {
+            col += 1;
+            row = 0;
+          } else {
+            let canGoDown = false;
+            if (row + 1 < ROWS) {
+              const column = grid[col] || [];
+              const cellBelow = column[row + 1];
+              if (cellBelow === undefined) {
+                canGoDown = true;
+              }
+            }
+            if (canGoDown) {
+              row += 1;
+            } else {
+              col += 1;
+              // row remains the same
+            }
+          }
+          if (!grid[col]) grid[col] = [];
+          for (let i = grid[col].length; i < row; i++) {
+            grid[col][i] = undefined;
+          }
+          grid[col][row] = ch;
+          prev = ch;
+        }
+        return grid;
+      }
+      /**
+       * 計算某一列的高度：最後一個非 undefined 的索引 + 1
+       * @param {Array<string|undefined>} column
+       * @returns {number}
+       */
+      function columnHeight(column) {
+        if (!column) return 0;
+        for (let i = column.length - 1; i >= 0; i--) {
+          if (column[i] !== undefined) return i + 1;
+        }
+        return 0;
+      }
+      /**
+       * 下三路顏色判斷
+       *
+       * @param {Array} cols 大路列陣列
+       * @param {number} c 欲判斷的列索引
+       * @param {number} r 欲判斷的行索引
+       * @param {number} d 偏移量 (1:大眼仔,2:小路,3:蟑螂路)
+       * @returns {string} RED or BLUE
+       */
+      function getColor(cols, c, r, d) {
+          if (r === 0) {
+            const h1 = columnHeight(cols[c - d]);
+            const h2 = columnHeight(cols[c - d - 1]);
+            return h1 === h2 ? RED : BLUE;
+          }
+          const colData = cols[c - d];
+          return (colData && colData[r] !== undefined) ? RED : BLUE;
+      }
+      /**
+       * 產生下三路
+       *
+       * @param {Array} cols 大路列陣列
+       * @param {number} offset 起始列 (2=大眼仔,3=小路,4=蟑螂路)
+       * @returns {string[]} 顏色符號陣列
+       */
+      function buildDerived(cols, offset) {
+        const dots = [];
+        for (let c = offset; c < cols.length; c++) {
+          const startH = columnHeight(cols[offset - 1]);
+          const has2 = startH > 1;
+          const startRow = has2 ? 1 : 0;
+          for (let r = 0; r < columnHeight(cols[c]); r++) {
+            if (c === offset && r < startRow) continue;
+            dots.push(getColor(cols, c, r, offset - 1));
+          }
+        }
+        return dots;
+      }
+      /**
+       * 長龍偵測：判斷序列尾端是否達到某一連勝長度
+       * @param {string} seq 輸入序列
+       * @returns {{side:string,len:number}|null}
+       */
+      function detectDragon(seq) {
+        if (!seq) return null;
+        let i = seq.length - 1;
+        let last = seq[i];
+        let streak = 0;
+        while (i >= 0 && seq[i] === last) {
+          streak++;
+          i--;
+        }
+        if (streak >= DRAGON_LEN) return { side: last, len: streak };
+        return null;
+      }
+      /**
+       * 前排規律分析
+       *
+       * 比較相鄰兩列的高度，齊腳為 E，突腳為 U
+       * @param {Array} cols 大路列陣列
+       * @param {number} lookBack 回溯幾次
+       * @returns {string[]} 記號陣列
+       */
+      function footPattern(cols, lookBack = 3) {
+        const patt = [];
+        for (let c = 1; c < cols.length; c++) {
+          const lenCurr = columnHeight(cols[c]);
+          const lenPrev = columnHeight(cols[c - 1]);
+          patt.push(lenCurr === lenPrev ? 'E' : 'U');
+        }
+        return patt.slice(-lookBack);
+      }
+      /**
+       * 根據前排規律給建議
+       * @param {string} seq 輸入序列
+       * @param {Array} cols 大路列陣列
+       * @returns {{msg:string,vote:string|null}}
+       */
+      function suggestByFoot(seq, cols) {
+        const patt = footPattern(cols);
+        if (!patt.length) return { msg: "前排資料不足", vote: null };
+        const eq = patt.filter(x => x === 'E').length;
+        const last = seq.slice(-1);
+        const vote = eq >= patt.length / 2 ? last : (last === 'B' ? 'P' : 'B');
+        const txt = eq >= patt.length / 2 ? "齊腳居多 → 延續" : "突腳居多 → 變盤";
+        return {
+          msg: `前排規律：${txt}（建議 ${vote === 'B' ? '莊' : '閒'}）`,
+          vote
+        };
+      }
+      /**
+       * 根據下三路給建議
+       * @param {string} seq 輸入序列
+       * @param {Array} arr 三條路的顏色陣列
+       * @returns {{msg:string,vote:string|null}}
+       */
+      function suggestByThree(seq, arr) {
+        const last = seq.slice(-1);
+        const reds = arr.filter(a => a[a.length - 1] === RED).length;
+        const blues = arr.length - reds;
+        if (reds === blues) return { msg: "下三路紅藍平，觀望", vote: null };
+        const follow = reds > blues;
+        const vote = follow ? last : (last === 'B' ? 'P' : 'B');
+        const txt = follow ? `延續 → 建議 ${vote === 'B' ? '莊' : '閒'}` : `變盤 → 建議 ${vote === 'B' ? '莊' : '閒'}`;
+        return { msg: `下三路：${txt}`, vote };
+      }
+      // 綁定按鈕事件
+      document.getElementById("analyze").addEventListener("click", () => {
+        const seq = document.getElementById("input").value.trim().toUpperCase().replace(/[^BPT]/g, "");
+        if (!seq) {
+          alert("請輸入有效序列（只能包含 B, P, T）");
+          return;
+        }
+        const cols = buildBigRoad(seq);
+        const bigEye = buildDerived(cols, 2);
+        const small = buildDerived(cols, 3);
+        const roach = buildDerived(cols, 4);
+        // 顯示大路
+        const formatBigRoad = (cols) => {
+          let output = "";
+          for (let r = 0; r < ROWS; r++) {
+            let rowStr = "";
+            for (let c = 0; c < cols.length; c++) {
+              const cell = (cols[c] && cols[c][r] !== undefined) ? cols[c][r] : " ";
+              rowStr += cell + " ";
+            }
+            output += rowStr.trimEnd() + "\n";
+          }
+          return output;
+        };
+        document.getElementById("bigRoad").textContent = formatBigRoad(cols);
+        document.getElementById("bigEyeBoy").textContent = bigEye.join(" ");
+        document.getElementById("smallRoad").textContent = small.join(" ");
+        document.getElementById("cockroach").textContent = roach.join(" ");
+        // 長龍
+        const dragon = detectDragon(seq);
+        const dragonElement = document.getElementById("dragon");
+        if (dragon) {
+          dragonElement.innerHTML = `<h3>長龍偵測 ⚠️</h3><p>${dragon.side === 'B' ? '莊' : '閒'} 已連續 ${dragon.len} 局</p>`;
+          dragonElement.classList.add('dragon-detected');
+        } else {
+          dragonElement.innerHTML = `<h3>長龍偵測</h3><p>未偵測到明顯長龍（${DRAGON_LEN}+ 連勝）</p>`;
+          dragonElement.classList.remove('dragon-detected');
+        }
+        // 前排規律
+        const foot = suggestByFoot(seq, cols);
+        document.getElementById("frontRule").innerHTML = `<h3>前排規律分析</h3><p>${foot.msg}</p>`;
+        // 下三路
+        const three = suggestByThree(seq, [bigEye, small, roach]);
+        document.getElementById("threeRoads").innerHTML = `<h3>下三路分析</h3><p>${three.msg}</p>`;
+        // 綜合建議
+        const votes = [three.vote, foot.vote].filter(v => v);
+        let finalMsg = "兩規則相左或皆不足 → 觀望";
+        if (votes.length === 2 && votes[0] === votes[1]) {
+          finalMsg = `兩規則一致 → 建議下注 ${votes[0] === 'B' ? '莊' : '閒'}`;
+        } else if (votes.length === 1) {
+          finalMsg = `僅一規則有明顯訊號 → 建議下注 ${votes[0] === 'B' ? '莊' : '閒'}`;
+        }
+        document.getElementById("suggestion").innerHTML = `<p>綜合建議：${finalMsg}</p>`;
+      });
+      // 預設範例
+      document.getElementById("input").value = "PBPBPBBPTBPBPPBBPBPBPBPBPPBPBBPPBPB";
+    })();
+  </script>
+</body>
+</html>
